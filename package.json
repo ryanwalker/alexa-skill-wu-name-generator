@@ -1,0 +1,23 @@
+{
+  "name": "wu-name-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanwalker/alexa-skill-wu-name-generator.git"
+  },
+  "author": "Ryan Walker",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ryanwalker/alexa-skill-wu-name-generator/issues"
+  },
+  "homepage": "https://github.com/ryanwalker/alexa-skill-wu-name-generator#readme",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "cheerio": "^1.0.0-rc.2"
+  }
+}
