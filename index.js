@@ -14,18 +14,79 @@ const FALLBACK_REPROMPT_OUTSIDE_GAME = 'Say yes to start the game or no to quit.
 
 const LaunchRequest = {
   canHandle(handlerInput) {
-    return true; //handlerInput.requestEnvelope.request.type === 'LaunchRequest';
+    return handlerInput.requestEnvelope.session.new || handlerInput.requestEnvelope.request.type === 'LaunchRequest';
   },
   async handle(handlerInput) {
+    const attributesManager = handlerInput.attributesManager;
     const responseBuilder = handlerInput.responseBuilder;
     const speechOutput = `Welcome to ${SKILL_NAME}. Would you like to find out what your wu name is?`;
     const reprompt = 'Say yes to start or no to quit.';
+
+    const attributes = await attributesManager.getPersistentAttributes() || {};
+    if (Object.keys(attributes).length === 0) {
+      attributes.anyAttributesIWant = 'woweeee';
+    }
+
+    attributesManager.setSessionAttributes(attributes);
+
     return responseBuilder
       .speak(speechOutput)
       .reprompt(reprompt)
       .getResponse();
   },
 };
+
+const FirstNameRequest = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+
+    return request.type === 'IntentRequest' && request.intent.name === 'FirstNameIntent';
+  },
+  async handle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+
+    const firstName = request.intent.slots.firstName.value;
+
+    const responseBuilder = handlerInput.responseBuilder;
+    const speechOutput = `Is your first name ${firstName}?`;
+    const reprompt = 'First name reprompt.';
+
+    return responseBuilder
+      .speak(speechOutput)
+      .reprompt(reprompt)
+      .getResponse();
+  },
+}
+
+const LastNameRequest = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+
+    return request.type === 'IntentRequest' && request.intent.name === 'LastNameIntent';
+  },
+  async handle(handlerInput) {
+    const slots = handlerInput.requestEnvelope.request.intent.slots;
+
+    const nameArray = [
+      slots.a.value,
+      slots.b.value,
+      slots.c.value,
+      slots.d.value,
+      slots.e.value,
+      slots.f.value,
+    ]
+
+    const responseBuilder = handlerInput.responseBuilder;
+    const speechOutput = `Is your last name ${nameArray.join('')}?`;
+    const reprompt = 'Last name reprompt.';
+
+    return responseBuilder
+      .speak(speechOutput)
+      .reprompt(reprompt)
+      .getResponse();
+  },
+
+}
 
 const ExitHandler = {
   canHandle(handlerInput) {
@@ -99,7 +160,10 @@ const skillBuilder = Alexa.SkillBuilders.standard();
 exports.handler = skillBuilder
   .addRequestHandlers(
     LaunchRequest,
+    FirstNameRequest,
+    LastNameRequest,
     ExitHandler,
+
   )
   .addErrorHandlers(ErrorHandler)
   .lambda();
