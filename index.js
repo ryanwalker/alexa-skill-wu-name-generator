@@ -17,17 +17,12 @@ const LaunchRequest = {
     return handlerInput.requestEnvelope.session.new || handlerInput.requestEnvelope.request.type === 'LaunchRequest';
   },
   async handle(handlerInput) {
-    const attributesManager = handlerInput.attributesManager;
-    const responseBuilder = handlerInput.responseBuilder;
+    const { attributesManager, responseBuilder } = handlerInput;
+
+    attributesManager.setSessionAttributes({});
+
     const speechOutput = `Welcome to ${SKILL_NAME}. Would you like to find out what your wu name is?`;
     const reprompt = 'Say yes to start or no to quit.';
-
-    const attributes = await attributesManager.getPersistentAttributes() || {};
-    if (Object.keys(attributes).length === 0) {
-      attributes.anyAttributesIWant = 'woweeee';
-    }
-
-    attributesManager.setSessionAttributes(attributes);
 
     return responseBuilder
       .speak(speechOutput)
@@ -39,16 +34,17 @@ const LaunchRequest = {
 const FirstNameRequest = {
   canHandle(handlerInput) {
     const request = handlerInput.requestEnvelope.request;
-
     return request.type === 'IntentRequest' && request.intent.name === 'FirstNameIntent';
   },
+
   async handle(handlerInput) {
-    const request = handlerInput.requestEnvelope.request;
+    const { attributesManager, requestEnvelope, responseBuilder } = handlerInput;
+    const sessionAttributes = attributesManager.getSessionAttributes();
+    const firstName = requestEnvelope.request.intent.slots.firstName.value;
 
-    const firstName = request.intent.slots.firstName.value;
+    sessionAttributes.firstName = firstName;
 
-    const responseBuilder = handlerInput.responseBuilder;
-    const speechOutput = `Is your first name ${firstName}?`;
+    const speechOutput = `Your first name is ${firstName}.`;
     const reprompt = 'First name reprompt.';
 
     return responseBuilder
@@ -61,23 +57,26 @@ const FirstNameRequest = {
 const LastNameRequest = {
   canHandle(handlerInput) {
     const request = handlerInput.requestEnvelope.request;
-
     return request.type === 'IntentRequest' && request.intent.name === 'LastNameIntent';
   },
   async handle(handlerInput) {
+    const { attributesManager, responseBuilder } = handlerInput;
     const slots = handlerInput.requestEnvelope.request.intent.slots;
+    const sessionAttributes = attributesManager.getSessionAttributes();
+    const firstName = sessionAttributes.firstName;
 
     const nameArray = [
-      slots.a.value,
-      slots.b.value,
-      slots.c.value,
-      slots.d.value,
-      slots.e.value,
+      slots.a.value, slots.b.value, slots.c.value, slots.d.value, slots.e.value,
       slots.f.value,
+      // slots.g.value, slots.h.value, slots.i.value, slots.j.value,
+      // slots.k.value, slots.l.value, slots.m.value, slots.n.value, slots.o.value,
+      // slots.p.value, slots.q.value, slots.r.value, slots.s.value, slots.t.value,
+      // slots.u.value, slots.v.value, slots.w.value, slots.x.value, slots.y.value,
+      // slots.z.value,
     ]
+    const lastName = nameArray.join('').trim();
 
-    const responseBuilder = handlerInput.responseBuilder;
-    const speechOutput = `Is your last name ${nameArray.join('')}?`;
+    const speechOutput = `Your name is  ${firstName} ${lastName}?`;
     const reprompt = 'Last name reprompt.';
 
     return responseBuilder
