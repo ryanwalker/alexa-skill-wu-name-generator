@@ -66,17 +66,37 @@ const LastNameRequest = {
     const firstName = sessionAttributes.firstName;
 
     const nameArray = [
-      slots.a.value, slots.b.value, slots.c.value, slots.d.value, slots.e.value,
-      slots.f.value,
-      // slots.g.value, slots.h.value, slots.i.value, slots.j.value,
-      // slots.k.value, slots.l.value, slots.m.value, slots.n.value, slots.o.value,
-      // slots.p.value, slots.q.value, slots.r.value, slots.s.value, slots.t.value,
-      // slots.u.value, slots.v.value, slots.w.value, slots.x.value, slots.y.value,
-      // slots.z.value,
+      slots.a ? slots.a.value : '',
+      slots.b ? slots.b.value : '',
+      slots.c ? slots.c.value : '',
+      slots.d ? slots.d.value : '',
+      slots.e ? slots.e.value : '',
+      slots.f ? slots.f.value : '',
+      slots.g ? slots.g.value : '',
+      slots.h ? slots.h.value : '',
+      slots.i ? slots.i.value : '',
+      slots.j ? slots.j.value : '',
+      slots.k ? slots.k.value : '',
+      slots.l ? slots.l.value : '',
+      slots.m ? slots.m.value : '',
+      slots.n ? slots.n.value : '',
+      slots.o ? slots.o.value : '',
+      slots.p ? slots.p.value : '',
+      slots.q ? slots.q.value : '',
+      slots.r ? slots.r.value : '',
+      slots.s ? slots.s.value : '',
+      slots.t ? slots.t.value : '',
+      slots.u ? slots.u.value : '',
+      slots.v ? slots.v.value : '',
+      slots.w ? slots.w.value : '',
+      slots.x ? slots.x.value : '',
+      slots.y ? slots.y.value : '',
+      slots.z ? slots.z.value : '',
     ]
     const lastName = nameArray.join('').trim();
+    const wuName = await wuNameRetriever(firstName, lastName);
 
-    const speechOutput = `Your name is  ${firstName} ${lastName}?`;
+    const speechOutput = `${firstName} ${lastName}, your wu name is  ${wuName}.`;
     const reprompt = 'Last name reprompt.';
 
     return responseBuilder
@@ -102,11 +122,8 @@ const ExitHandler = {
   },
 };
 
-const wuNameRetriever = (event) => {
-    var firstName = event.firstName;
-    var lastName = event.lastName;
-
-    const formData = 'fname=' + firstName + '&sname=' + lastName;
+const wuNameRetriever = (firstName, lastName) => {
+  const formData = 'fname=' + firstName + '&sname=' + lastName;
 
   return axios.post(
     'https://recordstore.com/wuname.pl',
@@ -117,14 +134,7 @@ const wuNameRetriever = (event) => {
     const $ = cheerio.load(datums)
     const wuName = $('span.newname').text();
 
-    return {
-      statusCode: 200,
-      body: {
-        "firstName": firstName,
-        "lastName": lastName,
-        "wuName": wuName
-      }
-    }
+    return wuName;
   })
   .catch(function (error) {
     console.log(error)
