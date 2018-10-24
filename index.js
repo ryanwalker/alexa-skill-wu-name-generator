@@ -12,6 +12,10 @@ const FALLBACK_REPROMPT_DURING_GAME = 'Please guess a number between 0 and 100.'
 const FALLBACK_MESSAGE_OUTSIDE_GAME = `The ${SKILL_NAME} skill can't help you with that.  It will come up with a number between 0 and 100 and you try to guess it by saying a number in that range. Would you like to play?`;
 const FALLBACK_REPROMPT_OUTSIDE_GAME = 'Say yes to start the game or no to quit.';
 
+const FIRST_NAME_STATE = 'firstNameState';
+const LAST_NAME_STATE = 'lastNameState';
+const WU_NAME_STATE = 'wuNameState';
+
 const LaunchRequest = {
   canHandle(handlerInput) {
     return handlerInput.requestEnvelope.session.new || handlerInput.requestEnvelope.request.type === 'LaunchRequest';
@@ -19,9 +23,12 @@ const LaunchRequest = {
   async handle(handlerInput) {
     const { attributesManager, responseBuilder } = handlerInput;
 
-    attributesManager.setSessionAttributes({});
+    const initialState = {
+      skillState: FIRST_NAME_STATE,
+    };
+    attributesManager.setSessionAttributes(initialState);
 
-    const speechOutput = `Welcome to ${SKILL_NAME}. Would you like to find out what your wu name is?`;
+    const speechOutput = `Welcome to ${SKILL_NAME}. Please spell your first name?`;
     const reprompt = 'Say yes to start or no to quit.';
 
     return responseBuilder
@@ -31,39 +38,17 @@ const LaunchRequest = {
   },
 };
 
-const FirstNameRequest = {
+const SpellNameRequest = {
   canHandle(handlerInput) {
     const request = handlerInput.requestEnvelope.request;
-    return request.type === 'IntentRequest' && request.intent.name === 'FirstNameIntent';
-  },
-
-  async handle(handlerInput) {
-    const { attributesManager, requestEnvelope, responseBuilder } = handlerInput;
-    const sessionAttributes = attributesManager.getSessionAttributes();
-    const firstName = requestEnvelope.request.intent.slots.firstName.value;
-
-    sessionAttributes.firstName = firstName;
-
-    const speechOutput = `Your first name is ${firstName}.`;
-    const reprompt = 'First name reprompt.';
-
-    return responseBuilder
-      .speak(speechOutput)
-      .reprompt(reprompt)
-      .getResponse();
-  },
-}
-
-const LastNameRequest = {
-  canHandle(handlerInput) {
-    const request = handlerInput.requestEnvelope.request;
-    return request.type === 'IntentRequest' && request.intent.name === 'LastNameIntent';
+    return request.type === 'IntentRequest' && request.intent.name === 'SpellNameIntent';
   },
   async handle(handlerInput) {
     const { attributesManager, responseBuilder } = handlerInput;
     const slots = handlerInput.requestEnvelope.request.intent.slots;
     const sessionAttributes = attributesManager.getSessionAttributes();
-    const firstName = sessionAttributes.firstName;
+    const currentSkillState = sessionAttributes.skillState;
+
 
     const nameArray = [
       slots.a ? slots.a.value : '',
@@ -93,10 +78,21 @@ const LastNameRequest = {
       slots.y ? slots.y.value : '',
       slots.z ? slots.z.value : '',
     ]
-    const lastName = nameArray.join('').trim();
-    const wuName = await wuNameRetriever(firstName, lastName);
+    const name = nameArray.join('').trim();
 
-    const speechOutput = `${firstName} ${lastName}, your wu name is  ${wuName}.`;
+    let speechOutput = `State = ${currentSkillState}`;
+    if (currentSkillState === FIRST_NAME_STATE) {
+      sessionAttributes.firstName = name;
+      sessionAttributes.skillState = LAST_NAME_STATE;
+      speechOutput = `You first name is ${name}. Please spell your last name.`
+    } else if (currentSkillState === LAST_NAME_STATE) {
+      const firstName = sessionAttributes.firstName;
+      sessionAttributes.lastName = name;
+      sessionAttributes.skillState = skillState = WU_NAME_STATE;
+      const wuName = await wuNameRetriever(firstName, name);
+      speechOutput = `You name is ${firstName} ${name}. Your wu name is ${wuName}`
+    }
+
     const reprompt = 'Last name reprompt.';
 
     return responseBuilder
@@ -106,6 +102,8 @@ const LastNameRequest = {
   },
 
 }
+
+
 
 const ExitHandler = {
   canHandle(handlerInput) {
@@ -169,8 +167,7 @@ const skillBuilder = Alexa.SkillBuilders.standard();
 exports.handler = skillBuilder
   .addRequestHandlers(
     LaunchRequest,
-    FirstNameRequest,
-    LastNameRequest,
+    SpellNameRequest,
     ExitHandler,
 
   )
