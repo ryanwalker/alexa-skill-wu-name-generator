@@ -22,7 +22,7 @@ const ExitHandler = {
   },
   handle(handlerInput) {
     return handlerInput.responseBuilder
-      .speak('Thanks for using ${SKILL_NAME}!')
+      .speak(`Thanks for using ${SKILL_NAME}!`)
       .getResponse();
   },
 };
@@ -43,7 +43,7 @@ const LaunchRequest = {
     };
     attributesManager.setSessionAttributes(initialState);
 
-    const speechOutput = `${SKILL_NAME}. Let's find out what your wu name is. Please spell your first name.`;
+    const speechOutput = `${SKILL_NAME} will find generate your wu name. Please spell your first name.`;
     const reprompt = 'Please spell your first name.';
 
     return responseBuilder
