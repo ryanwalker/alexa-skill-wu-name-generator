@@ -7,18 +7,33 @@ const cheerio = require('cheerio')
 const Alexa = require('ask-sdk');
 
 const SKILL_NAME = 'Wu Name Generator';
-const FALLBACK_MESSAGE_DURING_GAME = `The ${SKILL_NAME} skill can't help you with that.  Try guessing a number between 0 and 100. `;
-const FALLBACK_REPROMPT_DURING_GAME = 'Please guess a number between 0 and 100.';
-const FALLBACK_MESSAGE_OUTSIDE_GAME = `The ${SKILL_NAME} skill can't help you with that.  It will come up with a number between 0 and 100 and you try to guess it by saying a number in that range. Would you like to play?`;
-const FALLBACK_REPROMPT_OUTSIDE_GAME = 'Say yes to start the game or no to quit.';
 
 const FIRST_NAME_STATE = 'firstNameState';
 const LAST_NAME_STATE = 'lastNameState';
 const WU_NAME_STATE = 'wuNameState';
 
+const ExitHandler = {
+  canHandle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request;
+
+    return request.type === 'IntentRequest'
+      && (request.intent.name === 'AMAZON.CancelIntent'
+        || request.intent.name === 'AMAZON.StopIntent');
+  },
+  handle(handlerInput) {
+    return handlerInput.responseBuilder
+      .speak('Thanks for using ${SKILL_NAME}!')
+      .getResponse();
+  },
+};
+
 const LaunchRequest = {
   canHandle(handlerInput) {
-    return handlerInput.requestEnvelope.session.new || handlerInput.requestEnvelope.request.type === 'LaunchRequest';
+    const request = handlerInput.requestEnvelope.request;
+
+    return handlerInput.requestEnvelope.session.new || request.type === 'LaunchRequest' ||
+    (request.type === 'IntentRequest' && request.intent.name === 'AMAZON.StartOverIntent') ||
+    (request.type === 'IntentRequest' && request.intent.name === 'AMAZON.HelpIntent')
   },
   async handle(handlerInput) {
     const { attributesManager, responseBuilder } = handlerInput;
@@ -28,8 +43,8 @@ const LaunchRequest = {
     };
     attributesManager.setSessionAttributes(initialState);
 
-    const speechOutput = `Welcome to ${SKILL_NAME}. Please spell your first name?`;
-    const reprompt = 'Say yes to start or no to quit.';
+    const speechOutput = `${SKILL_NAME}. Let's find out what your wu name is. Please spell your first name.`;
+    const reprompt = 'Please spell your first name.';
 
     return responseBuilder
       .speak(speechOutput)
@@ -78,22 +93,26 @@ const SpellNameRequest = {
       slots.y ? slots.y.value : '',
       slots.z ? slots.z.value : '',
     ]
-    const name = nameArray.join('').trim();
+    const name = nameArray.join('').trim().replace(/\./g,'');
 
-    let speechOutput = `State = ${currentSkillState}`;
+    let speechOutput = '';
+    let reprompt = '';
     if (currentSkillState === FIRST_NAME_STATE) {
       sessionAttributes.firstName = name;
       sessionAttributes.skillState = LAST_NAME_STATE;
-      speechOutput = `You first name is ${name}. Please spell your last name.`
+      speechOutput = `Your first name is ${name}. Please spell your last name.`;
+      reprompt = 'Please spell your last name';
     } else if (currentSkillState === LAST_NAME_STATE) {
       const firstName = sessionAttributes.firstName;
       sessionAttributes.lastName = name;
       sessionAttributes.skillState = skillState = WU_NAME_STATE;
-      const wuName = await wuNameRetriever(firstName, name);
-      speechOutput = `You name is ${firstName} ${name}. Your wu name is ${wuName}`
+      let wuName = await wuNameRetriever(firstName, name);
+      wuName = wuName.toLowerCase()
+        .replace(/assman/g,'assasin')
+        .replace(/nudist/g, 'neurolinguist');
+      speechOutput = `${firstName} ${name}, Your wu name is ${wuName}. To generate a new wu name, say start over.`;
+      reprompt = speechOutput;
     }
-
-    const reprompt = 'Last name reprompt.';
 
     return responseBuilder
       .speak(speechOutput)
@@ -105,20 +124,6 @@ const SpellNameRequest = {
 
 
 
-const ExitHandler = {
-  canHandle(handlerInput) {
-    const request = handlerInput.requestEnvelope.request;
-
-    return request.type === 'IntentRequest'
-      && (request.intent.name === 'AMAZON.CancelIntent'
-        || request.intent.name === 'AMAZON.StopIntent');
-  },
-  handle(handlerInput) {
-    return handlerInput.responseBuilder
-      .speak('Thanks for playing!')
-      .getResponse();
-  },
-};
 
 const wuNameRetriever = (firstName, lastName) => {
   const formData = 'fname=' + firstName + '&sname=' + lastName;
